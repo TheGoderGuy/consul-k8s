@@ -152,7 +152,7 @@ spec:
         emptyDir:
           medium: "Memory"
       {{- if $root.Values.global.tls.enabled }}
-      {{- if not (and $root.Values.externalServers.enabled $root.Values.externalServers.useSystemRoots) }}
+      {{- if not (or (and $root.Values.externalServers.enabled $root.Values.externalServers.useSystemRoots) ($root.Values.global.secretsBackend.vault.enabled)) }}
       - name: consul-ca-cert
         secret:
           {{- if $root.Values.global.tls.caCert.secretName }}
@@ -205,10 +205,12 @@ spec:
         volumeMounts:
         - name: consul-service
           mountPath: /consul/service
-        {{- if and $root.Values.global.tls.enabled (not (and $root.Values.externalServers.enabled $root.Values.externalServers.useSystemRoots)) }}
+        {{- if $root.Values.global.tls.enabled }}
+        {{- if not (or (and $root.Values.externalServers.enabled $root.Values.externalServers.useSystemRoots) ($root.Values.global.secretsBackend.vault.enabled)) }}
         - name: consul-ca-cert
           mountPath: /consul/tls/ca
           readOnly: true
+        {{- end }}
         {{- end }}
         resources:
           requests:
@@ -224,10 +226,12 @@ spec:
         resources: {{ toYaml (default $defaults.resources .resources) | nindent 10 }}
         {{- end }}
         volumeMounts:
-        {{- if and $root.Values.global.tls.enabled (not (and $root.Values.externalServers.enabled $root.Values.externalServers.useSystemRoots)) }}
+        {{- if $root.Values.global.tls.enabled }}
+        {{- if not (or (and $root.Values.externalServers.enabled $root.Values.externalServers.useSystemRoots) ($root.Values.global.secretsBackend.vault.enabled)) }}
         - name: consul-ca-cert
           mountPath: /consul/tls/ca
           readOnly: true
+        {{- end }}
         {{- end }}
         env:
         - name: POD_NAME
